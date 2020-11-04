@@ -4,7 +4,7 @@ const json2xls = require('json2xls')
 const uuid4 = require('uuid4')
 
 module.exports = {
-    jsonUtils: {
+    json: {
         readFile: function (path) {
             let data = fs.readFileSync(path)
             return JSON.parse(data)
@@ -14,7 +14,7 @@ module.exports = {
             fs.writeFileSync(path, data)
         }
     },
-    excelUtils: {
+    excel: {
         readFile: function (path) {
             return new Promise((res, rej) => {
                 excel2Json(path).then((rows) => {
@@ -49,6 +49,46 @@ module.exports = {
                 }
             }
             fs.writeFileSync(path, json2xls(data), 'binary')
+        }
+    },
+    datetime: {
+        format: {
+            yMd: function (data) {
+                if (!data) {
+                    return null
+                }
+                let year = '' + data.getFullYear()
+                let month = '' + (data.getMonth() + 1)
+                if (month.length === 1) {
+                    month = '0' + month
+                }
+                let day = '' + data.getDate()
+                if (day.length === 1) {
+                    day = '0' + day
+                }
+                return `${year}-${month}-${day}`
+            },
+            yMdHms: function (data) {
+                if (!data) {
+                    return null
+                }
+                let hour = '' + data.getHours()
+                if (hour.length === 1) {
+                    hour = '0' + hour
+                }
+                let minute = '' + data.getMinutes()
+                if (minute.length === 1) {
+                    minute = '0' + minute
+                }
+                let second = '' + data.getSeconds()
+                if (second.length === 1) {
+                    second = '0' + second
+                }
+                return `${this.yMd(data)} ${hour}:${minute}:${second}`
+            }
+        },
+        getDayOfWeek: function (date) {
+            return date.getDay() + 1
         }
     }
 }
