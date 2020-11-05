@@ -24,6 +24,5 @@ module.exports = async function () {
             newData.push(temp)
         }
         utils.json.writeFile(`data/json/CDV/${fileName}.json`, newData)
-        console.log('done ', fileName)
     }
 }

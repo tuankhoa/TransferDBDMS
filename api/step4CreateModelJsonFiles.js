@@ -162,8 +162,8 @@ module.exports = {
             result.push(temp)
         }
         // console.log(result[0])
-        utils.excel.writeFile(`data/excel/Models/Customers.xlsx`, result)
-        utils.json.writeFile(`data/json/Models/Customers.json`, result)
+        // utils.excel.writeFile(`data/excel/Models/Customers.xlsx`, result)
+        // utils.json.writeFile(`data/json/Models/Customers.json`, result)
         this.ProductCategories(users, customers)
     },
     ProductCategories: async function (users, customers) {
@@ -180,8 +180,8 @@ module.exports = {
                 name: currentProductCat.name
             })
         }
-        utils.excel.writeFile(`data/excel/Models/ProductCategories.xlsx`, result)
-        utils.json.writeFile(`data/json/Models/ProductCategories.json`, result)
+        // utils.excel.writeFile(`data/excel/Models/ProductCategories.xlsx`, result)
+        // utils.json.writeFile(`data/json/Models/ProductCategories.json`, result)
         this.Products(users, customers, productCategories)
     },
     Products: async function (users, customers, productCategories) {
@@ -206,7 +206,59 @@ module.exports = {
             }
             result.push(temp)
         }
-        utils.excel.writeFile(`data/excel/Models/Products.xlsx`, result)
-        utils.json.writeFile(`data/json/Models/Products.json`, result)
+        // utils.excel.writeFile(`data/excel/Models/Products.xlsx`, result)
+        // utils.json.writeFile(`data/json/Models/Products.json`, result)
+        this.Orders(users, customers, products)
     },
+    Orders: async function (users, customers, products) {
+        let result = []
+        let orders = await utils.json.readFile(`data/json/${folder}/Orders.json`)
+        let ordersLen = orders.length
+        // console.log(orders[0])
+        let keys = Object.keys(orders[0])
+        for (let i = 0; i < ordersLen; i++) {
+            let currentOrder = orders[i]
+            let temp = {}
+            for (let j = 0; j < keys.length; j++) {
+                if (keys[j] != 'old_id') {
+                    temp[`${keys[j]}`] = currentOrder[`${keys[j]}`]
+                }
+            }
+            user = users.find(u => u.old_id == currentOrder.user_id)
+            customer = customers.find(c => c.old_id == currentOrder.customer_id)
+            temp.user_id = user ? user.id : null
+            temp.customer_id = customer ? customer.id : null
+
+            result.push(temp)
+        }
+        // console.log(result[0])
+        // utils.excel.writeFile(`data/excel/Models/Orders.xlsx`, result)
+        // utils.json.writeFile(`data/json/Models/Orders.json`, result)
+        this.OrderProducts(orders, products)
+    },
+    OrderProducts: async function (orders, products) {
+        let result = []
+        let orderProducts = await utils.json.readFile(`data/json/${folder}/OrderProducts.json`)
+        let orderProductsLen = orderProducts.length
+        // console.log(orderProducts[0])
+        let keys = Object.keys(orderProducts[0])
+        for (let i = 0; i < orderProductsLen; i++) {
+            let currentOrderProduct = orderProducts[i]
+            let temp = {}
+            for (let j = 0; j < keys.length; j++) {
+                if (keys[j] != 'old_id') {
+                    temp[`${keys[j]}`] = currentOrderProduct[`${keys[j]}`]
+                }
+            }
+            order = orders.find(o => o.old_id == currentOrderProduct.order_id)
+            product = products.find(p => p.old_id == currentOrderProduct.product_id)
+            temp.order_id = order ? order.id : null
+            temp.product_id = product ? product.id : null
+
+            result.push(temp)
+        }
+        // console.log(result[0])
+        // utils.excel.writeFile(`data/excel/Models/OrderProducts.xlsx`, result)
+        // utils.json.writeFile(`data/json/Models/OrderProducts.json`, result)
+    }
 }
