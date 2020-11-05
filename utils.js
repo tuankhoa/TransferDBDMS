@@ -113,5 +113,38 @@ module.exports = {
         getDayOfWeek: function (date) {
             return date.getDay() + 1
         }
+    },
+    text: {
+        removeAccents: function (text) {
+            let accentsMap = [
+                'aàảãáạăằẳẵắặâầẩẫấậ',
+                'AÀẢÃÁẠĂẰẲẴẮẶÂẦẨẪẤẬ',
+                'dđ', 'DĐ',
+                'eèẻẽéẹêềểễếệ',
+                'EÈẺẼÉẸÊỀỂỄẾỆ',
+                'iìỉĩíị',
+                'IÌỈĨÍỊ',
+                'oòỏõóọôồổỗốộơờởỡớợ',
+                'OÒỎÕÓỌÔỒỔỖỐỘƠỜỞỠỚỢ',
+                'uùủũúụưừửữứự',
+                'UÙỦŨÚỤƯỪỬỮỨỰ',
+                'yỳỷỹýỵ',
+                'YỲỶỸÝỴ'
+            ]
+            for (let i = 0 ; i < accentsMap.length; i++) {
+                let re = new RegExp('[' + accentsMap[i].substr(1) + ']', 'g')
+                let char = accentsMap[i][0]
+                text = text.replace(re, char)
+            }
+            return text
+        },
+        checkAndAddZeroPrePhone: function (phone) {
+            if (phone) {
+                let temp = phone.toString().trim()
+                return temp[0] != '0' ? '0' + temp : temp
+            } else {
+                return null
+            }
+        }
     }
 }

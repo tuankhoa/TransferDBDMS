@@ -17,5 +17,6 @@ select
 	null as manager_id,
 	IDNPP as distributor_id,
 	zalo as zalo,
-	phone as phone
+	phone as phone,
+	vungmien as region
 from TblCommon_User
