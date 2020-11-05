@@ -1,7 +1,7 @@
 select
 	id as oldId,
-	null as created_at,
-	null as updated_at,
+	ngaytao as created_at,
+	ngaycapnhatcuoi as updated_at,
 	iif(TrangThai = 'Delete', 'DELETED', 'ACTIVE') as status,
 	GhiChu as note,
 	IDCustomer as customer_id,

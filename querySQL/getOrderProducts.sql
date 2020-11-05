@@ -1,9 +1,10 @@
 select
-	id as oldId,
+	dhct.id as oldId,
 	null as created_at,
 	null as updated_at,
-	'ACTIVE' as status,
+	iif(dh.trangthai = 'DELETE', 'DELETED', 'ACTIVE') as status,
 	SoLuong as quantity,
 	IDDonHang as order_id,
 	IDSanPham as product_id
-from TblDonHangChiTiet
+from TblDonHangChiTiet dhct
+left join tbldonhang dh on dh.id = dhct.iddonhang

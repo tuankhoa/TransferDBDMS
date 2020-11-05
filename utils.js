@@ -10,8 +10,8 @@ module.exports = {
             return JSON.parse(data)
         },
         writeFile: function (path, dataJson) {
-            let data = JSON.stringify(dataJson);
-            fs.writeFileSync(path, data)
+            fs.writeFileSync(path, JSON.stringify(dataJson))
+            console.log('Wrote file to: ' + path)
         }
     },
     excel: {
@@ -20,9 +20,7 @@ module.exports = {
                 excel2Json(path).then((rows) => {
                     let result = []
                     for (let i = 1; i < rows.length; i++) {
-                        let row = {
-                            new_id: uuid4()
-                        }
+                        let row = {}
                         for (let j = 0; j < rows[0].length; j++) {
                             row[`${rows[0][j]}`] = typeof rows[i][j] == 'string' && rows[i][j].toLowerCase() == 'null' ? null : rows[i][j]
                         }
@@ -31,6 +29,30 @@ module.exports = {
                     return res(result)
                 })
             })
+        },
+        readFileAndCreatedNewId: function (path) {
+            return new Promise((res, rej) => {
+                excel2Json(path).then((rows) => {
+                    let result = []
+                    for (let i = 1; i < rows.length; i++) {
+                        let row = {
+                            id: uuid4()
+                        }
+                        for (let j = 0; j < rows[0].length; j++) {
+                            if (rows[0][j] == 'oldId') {
+                                row.old_id = rows[i][j]
+                            } else {
+                                row[`${rows[0][j]}`] = typeof rows[i][j] == 'string' && rows[i][j].toLowerCase() == 'null' ? null : rows[i][j]
+                            }
+                        }
+                        result.push(row)
+                    }
+                    return res(result)
+                })
+            })
+        },
+        readAndWriteJsonFile: async function (pathRead, pathWrite) {
+            fs.writeFileSync(pathWrite, JSON.stringify(await this.readFile(pathRead)))
         },
         writeFile: function (path, data) {
             let objectMaxKeysLength = Object.keys(data[0]).length
@@ -49,6 +71,7 @@ module.exports = {
                 }
             }
             fs.writeFileSync(path, json2xls(data), 'binary')
+            console.log('Wrote file to: ' + path)
         }
     },
     datetime: {
