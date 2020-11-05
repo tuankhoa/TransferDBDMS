@@ -22,12 +22,13 @@ module.exports = {
         let distributors = await utils.json.readFile(`data/json/${folder}/Distributors.json`)
         let users = await utils.json.readFile(`data/json/${folder}/Users.json`)
         let usersLen = users.length
+        let admin = users.find(u => u.code && u.code.toLowerCase() == 'admin')
         for (let i = 0; i < usersLen; i++) {
             let currentUser = users[i]
             // convert code to string
             currentUser.code = currentUser.code ? currentUser.code.toString() : null
-            // set password is empty
-            currentUser.password = ''
+            // set password
+            currentUser.password = 'pbkdf2_sha256$150000$Z8VRCRf6Jwgt$rsZzPK59NFjBsmYwn8qNJqtc2r2izcesOhJg/EMT/rI='
             // process phone, zalo
             currentUser.phone = utils.text.checkAndAddZeroPrePhone(currentUser.phone)
             currentUser.zalo = utils.text.checkAndAddZeroPrePhone(currentUser.zalo)
@@ -44,6 +45,8 @@ module.exports = {
             if (managerRole) {
                 let manager = users.find(u => u.old_id == currentUser[`${managerRole}_id`])
                 currentUser.manager_id = manager ? manager.id : null
+            } else if (currentUser.user_type == 'SD') {
+                currentUser.manager_id = admin.id
             }
 
             result.push({
@@ -67,23 +70,62 @@ module.exports = {
         // console.log(result[5])
         // utils.excel.writeFile(`data/excel/Models/Users.xlsx`, result)
         // utils.json.writeFile(`data/json/Models/Users.json`, result)
+        this.UsersGroups(users)
+        this.UsersUserPermissions(users)
         this.Distributors(distributors)
         this.TargetKpis(users)
         this.Customers(users)
     },
+    UsersGroups: function (users) {
+        let result = []
+        let usersLen = users.length
+        for (let i = 0; i < usersLen; i++) {
+            let currentUser = users[i]
+            result.push({
+                user_id: currentUser.id,
+                group_id: rolesName.indexOf(currentUser.user_type.toUpperCase()) + 1
+            })
+        }
+        // utils.excel.writeFile(`data/excel/Models/UsersGroups.xlsx`, result)
+        // utils.json.writeFile(`data/json/Models/UsersGroups.json`, result)
+    },
+    UsersUserPermissions: function (users) {
+        let result = []
+        let usersLen = users.length
+        for (let i = 0; i < usersLen; i++) {
+            let currentUser = users[i]
+            for (let j = 1; j <= 80; j++) {
+                result.push({
+                    user_id: currentUser.id,
+                    permission_id: j
+                })
+            }
+            result.push({
+                user_id: currentUser.id,
+                permission_id: 1000
+            })
+        }
+        // utils.excel.writeFile(`data/excel/Models/UsersUserPermissions.xlsx`, result)
+        // utils.json.writeFile(`data/json/Models/UsersUserPermissions.json`, result)
+    },
     Distributors: async function (distributors) {
         let result = []
-        // let distributors = await utils.json.readFile(`data/json/${folder}/Distributors.json`)
         let keys = Object.keys(distributors[0])
         let distributorsLen = distributors.length
         for (let i = 0; i < distributorsLen; i++) {
+            let currentDistributor = distributors[i]
             let temp = {}
             for (let key of keys) {
                 if (key != 'old_id') {
                     if (key == 'phone') {
-                        temp.phone = utils.text.checkAndAddZeroPrePhone(distributors[i].phone)
+                        temp.phone = utils.text.checkAndAddZeroPrePhone(currentDistributor.phone)
+                    } else if (key == 'region') {
+                        let region = regions.find(r => r.name == currentDistributor.region)
+                        temp.region_id = region ? region.id : null
+                    } else if (['city', 'district', 'village'].includes(key)) {
+                        temp[`${key}_id`] = currentDistributor[`${key}`]
                     } else {
-                        temp[`${key}`] = distributors[i][`${key}`]
+                        temp[`${key}`] = currentDistributor[`${key}`]
                     }
                 }
             }
@@ -95,7 +137,6 @@ module.exports = {
     },
     TargetKpis: async function (users) {
         let result = []
-        // let users = await utils.json.readFile(`data/json/${folder}/Users.json`)
         let targetKpis = await utils.json.readFile(`data/json/${folder}/TargetKpis.json`)
         let targetKpisLen = targetKpis.length
         for (let i = 0; i < targetKpisLen; i++) {
@@ -118,7 +159,6 @@ module.exports = {
     },
     Customers: async function (users) {
         let result = []
-        // let users = await utils.json.readFile(`data/json/${folder}/Users.json`)
         let customers = await utils.json.readFile(`data/json/${folder}/Customers.json`)
         let customersLen = customers.length
         // console.log(customers[0])
@@ -131,8 +171,8 @@ module.exports = {
                 status: currentCustomer.status,
                 name: currentCustomer.name,
                 contact: currentCustomer.contact,
-                address: ((currentCustomer.address ? currentCustomer.address + ' - ' : '') + (currentCustomer.village ? currentCustomer.village + ' - ' : '')
-                    + (currentCustomer.district ? currentCustomer.district + ' - ' : '') + (currentCustomer.city ? currentCustomer.city : '')).trim(),
+                address: ((currentCustomer.address ? currentCustomer.address + ', ' : '') + (currentCustomer.village ? currentCustomer.village + ', ' : '')
+                    + (currentCustomer.district ? currentCustomer.district + ', ' : '') + (currentCustomer.city ? currentCustomer.city : '')).trim(),
                 phone: utils.text.checkAndAddZeroPrePhone(currentCustomer.phone),
                 mobile: utils.text.checkAndAddZeroPrePhone(currentCustomer.mobile),
                 frequency: currentCustomer.frequency
@@ -152,19 +192,52 @@ module.exports = {
             temp.city_id = null
             temp.district_id = null
             temp.village_id = null
-            temp.region = currentCustomer.region
-            user = users.find(u => u.old_id == currentCustomer.user_id)
+
+            let region = regions.find(r => r.name == currentCustomer.region)
+            temp.region_id = region ? region.id : null
+
+            let user = users.find(u => u.old_id == currentCustomer.user_id)
             temp.user_id = user ? user.id : null
-            temp.customer_type = currentCustomer.customer_type
-            temp.location = currentCustomer.location
-            temp.store_type = currentCustomer.store_type
+
+            let customerType = customerTypes.find(ct => ct.name == currentCustomer.customer_type)
+            temp.customer_type_id = customerType ? customerType.id : null
+
+            let location = locations.find(l => l.name == currentCustomer.location)
+            temp.location_id = location ? location.id : null
+
+            let storeType = storeTypes.find(st => st.name == currentCustomer.store_type)
+            temp.store_type_id = storeType ? storeType.id : null
 
             result.push(temp)
         }
         // console.log(result[0])
         // utils.excel.writeFile(`data/excel/Models/Customers.xlsx`, result)
         // utils.json.writeFile(`data/json/Models/Customers.json`, result)
+        this.CustomerNotes(users, customers)
         this.ProductCategories(users, customers)
+    },
+    CustomerNotes: async function (users, customers) {
+        let result = []
+        let notes = await utils.json.readFile(`data/json/${folder}/CustomerNotes.json`)
+        let notesLen = notes.length
+        for (let i = 0; i < notesLen; i++) {
+            let currentNote = notes[i]
+            let temp = {
+                id: currentNote.id,
+                created_at: currentNote.created_at,
+                updated_at: currentNote.updated_at,
+                status: currentNote.status,
+                content: currentNote.content
+            }
+            let user = users.find(u => u.old_id == currentNote.user_id)
+            let customer = customers.find(c => c.old_id == currentNote.customer_id)
+            temp.user_id = user ? user.id : null
+            temp.customer_id = customer ? customer.id : null
+
+            result.push(temp)
+        }
+        // utils.excel.writeFile(`data/excel/Models/CustomerNotes.xlsx`, result.filter(r => r.user_id && r.customer_id))
+        // utils.json.writeFile(`data/json/Models/CustomerNotes.json`, result.filter(r => r.user_id && r.customer_id))
     },
     ProductCategories: async function (users, customers) {
         let result = []
@@ -224,8 +297,8 @@ module.exports = {
                     temp[`${keys[j]}`] = currentOrder[`${keys[j]}`]
                 }
             }
-            user = users.find(u => u.old_id == currentOrder.user_id)
-            customer = customers.find(c => c.old_id == currentOrder.customer_id)
+            let user = users.find(u => u.old_id == currentOrder.user_id)
+            let customer = customers.find(c => c.old_id == currentOrder.customer_id)
             temp.user_id = user ? user.id : null
             temp.customer_id = customer ? customer.id : null
 

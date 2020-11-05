@@ -13,15 +13,15 @@ module.exports = {
             'Locations'
         ],
         fileNameModels: [
-            // 'Distributors',
-            // 'Users',
-            // 'TargetKpis',
+            'Distributors',
+            'Users',
+            'TargetKpis',
             'Customers',
-            // 'CustomerNotes',
-            // 'ProductCategories',
-            // 'Products',
-            // 'Orders',
-            // 'OrderProducts'
+            'CustomerNotes',
+            'ProductCategories',
+            'Products',
+            'Orders',
+            'OrderProducts'
         ]
     },
     keysIgnore: [
@@ -32,10 +32,10 @@ module.exports = {
         'status'
     ],
     rolesName: [
-        'Admin',
-        'SD',
+        'ADMIN',
         'ASM',
         'GSBH',
+        'SD',
         'NVBH'
     ]
 }
