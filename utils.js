@@ -115,6 +115,10 @@ module.exports = {
         }
     },
     text: {
+        writeFile: function (path, data) {
+            fs.writeFileSync(path, data)
+            console.log('Wrote file to: ' + path)
+        },
         removeAccents: function (text) {
             let accentsMap = [
                 'aàảãáạăằẳẵắặâầẩẫấậ',

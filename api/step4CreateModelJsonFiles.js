@@ -1,6 +1,8 @@
 const utils = require('../utils.js')
 const constants = require('../constants.js')
 
+const step5CreateQueryFile = require('./step5CreateQueryFile.js')
+
 const regions = require('../data/json/Categories/Regions.json')
 const locations = require('../data/json/Categories/Locations.json')
 const customerTypes = require('../data/json/Categories/CustomerTypes.json')
@@ -28,23 +30,20 @@ module.exports = {
             // convert code to string
             currentUser.code = currentUser.code ? currentUser.code.toString() : null
             // set password
-            currentUser.password = 'pbkdf2_sha256$150000$Z8VRCRf6Jwgt$rsZzPK59NFjBsmYwn8qNJqtc2r2izcesOhJg/EMT/rI='
+            currentUser.password = ''
             // process phone, zalo
             currentUser.phone = utils.text.checkAndAddZeroPrePhone(currentUser.phone)
             currentUser.zalo = utils.text.checkAndAddZeroPrePhone(currentUser.zalo)
             // process distributor
-            if (currentUser.distributor_id) {
-                let distributor = distributors.find(d => d.old_id == currentUser.distributor_id && currentUser.user_type == 'NVBH')
-                if (distributor) {
-                    currentUser.distributor_id = distributor ? distributor.id : null
-                    distributor.region = currentUser.region
-                }
+            let distributor = distributors.find(d => currentUser.distributor_id && d.old_id == currentUser.distributor_id && currentUser.user_type == 'NVBH')
+            if (distributor) {
+                distributor.region = currentUser.region
             }
             // process manager
             let managerRole = currentUser.user_type == 'NVBH' ? 'gsbh' : currentUser.user_type == 'GSBH' ? 'asm' : currentUser.user_type == 'ASM' ? 'sd' : null
             if (managerRole) {
                 let manager = users.find(u => u.old_id == currentUser[`${managerRole}_id`])
-                currentUser.manager_id = manager ? manager.id : null
+                currentUser.manager_id = manager ? manager.id : currentUser.code && !(currentUser.code.toLowerCase().includes('admin')) ? admin.id : null
             } else if (currentUser.user_type == 'SD') {
                 currentUser.manager_id = admin.id
             }
@@ -61,15 +60,15 @@ module.exports = {
                 is_staff: currentUser.is_staff,
                 name: currentUser.name,
                 manager_id: currentUser.manager_id,
-                distributor_id: currentUser.distributor_id,
+                distributor_id: distributor ? distributor.id : null,
                 zalo: currentUser.zalo,
                 phone: currentUser.phone
             })
         }
         // console.log(users[5])
         // console.log(result[5])
-        // utils.excel.writeFile(`data/excel/Models/Users.xlsx`, result)
-        // utils.json.writeFile(`data/json/Models/Users.json`, result)
+        // utils.excel.writeFile(`data/excel/Models/Users.xlsx`, result.filter(r => r.code))
+        // utils.json.writeFile(`data/json/Models/Users.json`, result.filter(r => r.code))
         this.UsersGroups(users)
         this.UsersUserPermissions(users)
         this.Distributors(distributors)
@@ -119,6 +118,8 @@ module.exports = {
                 if (key != 'old_id') {
                     if (key == 'phone') {
                         temp.phone = utils.text.checkAndAddZeroPrePhone(currentDistributor.phone)
+                    } else if (key == 'address') {
+                        temp.address = currentDistributor.address ? currentDistributor.address : ''
                     } else if (key == 'region') {
                         let region = regions.find(r => r.name == currentDistributor.region)
                         temp.region_id = region ? region.id : null
@@ -132,8 +133,8 @@ module.exports = {
             result.push(temp)
         }
         // console.log(result[0])
-        // utils.excel.writeFile(`data/excel/Models/Distributors.xlsx`, result)
-        // utils.json.writeFile(`data/json/Models/Distributors.json`, result)
+        // utils.excel.writeFile(`data/excel/Models/Distributors.xlsx`, result.filter(r => r.code))
+        // utils.json.writeFile(`data/json/Models/Distributors.json`, result.filter(r => r.code))
     },
     TargetKpis: async function (users) {
         let result = []
@@ -179,7 +180,7 @@ module.exports = {
             }
             if (currentCustomer.dow_default) {
                 temp.dow_default = currentCustomer.dow_default
-                temp.dow_f8 = currentCustomer.dow_f8
+                temp.dow_f8 = currentCustomer.dow_f8 != null ? currentCustomer.dow_f8 : 0
             } else {
                 temp.dow_default = currentCustomer.last_visited
                 if (currentCustomer.frequency == 'F8') {
@@ -188,6 +189,9 @@ module.exports = {
                     }
                     temp.dow_f8 = temp.dow_default + 3
                 }
+            }
+            if (temp.dow_f8 == null) {
+                temp.dow_f8 = currentCustomer.frequency == 'F8' ? temp.dow_default + 3 : 0
             }
             temp.city_id = null
             temp.district_id = null
@@ -211,8 +215,8 @@ module.exports = {
             result.push(temp)
         }
         // console.log(result[0])
-        // utils.excel.writeFile(`data/excel/Models/Customers.xlsx`, result)
-        // utils.json.writeFile(`data/json/Models/Customers.json`, result)
+        // utils.excel.writeFile(`data/excel/Models/Customers.xlsx`, result.filter(r => r.name))
+        // utils.json.writeFile(`data/json/Models/Customers.json`, result.filter(r => r.name))
         this.CustomerNotes(users, customers)
         this.ProductCategories(users, customers)
     },
@@ -333,5 +337,7 @@ module.exports = {
         // console.log(result[0])
         // utils.excel.writeFile(`data/excel/Models/OrderProducts.xlsx`, result)
         // utils.json.writeFile(`data/json/Models/OrderProducts.json`, result)
+
+        step5CreateQueryFile()
     }
 }
