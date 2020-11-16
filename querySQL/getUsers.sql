@@ -8,7 +8,7 @@ select
 	IDGSBH as gsbh_id,
 	IDASM as asm_id,
 	IDSD as sd_id,
-	Password as password,
+	'' as password,
 	null as last_login,
 	0 as is_superuser,
 	UserName as code,
@@ -20,3 +20,4 @@ select
 	phone as phone,
 	vungmien as region
 from TblCommon_User
+where UserName <> ''

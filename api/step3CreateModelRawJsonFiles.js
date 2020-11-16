@@ -14,8 +14,8 @@ module.exports = async function () {
             let temp = {
                 id: data[i].id,
                 old_id: data[i].old_id,
-                created_at: ['CustomerNotes', 'Orders'].includes(fileName) ? utils.datetime.format.yMdHms(data[i].created_at) : createdDate,
-                updated_at: ['CustomerNotes', 'Orders'].includes(fileName) ? utils.datetime.format.yMdHms(data[i].updated_at) : createdDate,
+                created_at: ['CustomerNotes', 'Orders', 'VisitSchedules'].includes(fileName) ? utils.datetime.format.yMdHms(data[i].created_at) : createdDate,
+                updated_at: ['CustomerNotes', 'Orders', 'VisitSchedules'].includes(fileName) ? utils.datetime.format.yMdHms(data[i].updated_at) : createdDate,
                 status: data[i].status
             }
             for (let j = 0; j < keys.length; j++) {
@@ -75,6 +75,21 @@ module.exports = async function () {
                                 temp.store_type = 'Cửa hàng'
                             } else if (!temp.store_type) {
                                 temp.store_type = null
+                            }
+                        } else if (keys[j] == 'city_id') {
+                            if (temp.city_id) {
+                                let numberCode = 100
+                                temp.city_id = (numberCode + temp.city_id).toString().slice(1)
+                            }
+                        } else if (keys[j] == 'district_id') {
+                            if (temp.district_id) {
+                                let numberCode = 1000
+                                temp.district_id = (numberCode + temp.district_id).toString().slice(1)
+                            }
+                        } else if (keys[j] == 'village_id') {
+                            if (temp.village_id) {
+                                let numberCode = 100000
+                                temp.village_id = (numberCode + temp.village_id).toString().slice(1)
                             }
                         }
                     }

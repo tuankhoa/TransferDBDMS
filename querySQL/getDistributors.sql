@@ -6,7 +6,7 @@ select
 	MaNhaPP as code,
 	TenNhaPP as name,
 	TenCongTy as company,
-	DiaChi as address,
+	isnull(DiaChi, '') as address,
 	null as city,
 	null as district,
 	null as village,
@@ -14,3 +14,4 @@ select
 	Email as email,
 	DienThoai as phone
 from TblNhaPhanPhoi
+where MaNhaPP <> ''

@@ -1,5 +1,5 @@
 module.exports = {
-    folder: '20201104',
+    folder: '20201109',
     fileName: {
         fileNameCDV: [
             'Cities',
@@ -13,15 +13,16 @@ module.exports = {
             'Locations'
         ],
         fileNameModels: [
-            'Distributors',
-            'Users',
-            'TargetKpis',
-            'Customers',
-            'CustomerNotes',
-            'ProductCategories',
-            'Products',
-            'Orders',
-            'OrderProducts'
+            // 'Distributors',
+            // 'Users',
+            // 'TargetKpis',
+            // 'Customers',
+            // 'CustomerNotes',
+            // 'ProductCategories',
+            // 'Products',
+            // 'Orders',
+            // 'OrderProducts',
+            'VisitSchedules'
         ],
         filesConvert2Query: [
             { name: 'CustomerTypes', tableName: 'customer_types', type: 'Categories' },
@@ -38,7 +39,8 @@ module.exports = {
             { name: 'ProductCategories', tableName: 'product_categories', type: 'Models' },
             { name: 'Products', tableName: 'products', type: 'Models' },
             { name: 'Orders', tableName: 'orders', type: 'Models' },
-            { name: 'OrderProducts', tableName: 'order_products', type: 'Models' }
+            { name: 'OrderProducts', tableName: 'order_products', type: 'Models' },
+            { name: 'VisitSchedules', tableName: 'visited_schedules', type: 'Models' }
         ]
     },
     keysIgnore: [

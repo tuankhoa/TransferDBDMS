@@ -29,8 +29,6 @@ module.exports = {
             let currentUser = users[i]
             // convert code to string
             currentUser.code = currentUser.code ? currentUser.code.toString() : null
-            // set password
-            currentUser.password = ''
             // process phone, zalo
             currentUser.phone = utils.text.checkAndAddZeroPrePhone(currentUser.phone)
             currentUser.zalo = utils.text.checkAndAddZeroPrePhone(currentUser.zalo)
@@ -43,6 +41,9 @@ module.exports = {
             let managerRole = currentUser.user_type == 'NVBH' ? 'gsbh' : currentUser.user_type == 'GSBH' ? 'asm' : currentUser.user_type == 'ASM' ? 'sd' : null
             if (managerRole) {
                 let manager = users.find(u => u.old_id == currentUser[`${managerRole}_id`])
+                if (manager && manager.code == '') {
+                    manager = admin
+                }
                 currentUser.manager_id = manager ? manager.id : currentUser.code && !(currentUser.code.toLowerCase().includes('admin')) ? admin.id : null
             } else if (currentUser.user_type == 'SD') {
                 currentUser.manager_id = admin.id
@@ -65,10 +66,8 @@ module.exports = {
                 phone: currentUser.phone
             })
         }
-        // console.log(users[5])
-        // console.log(result[5])
-        // utils.excel.writeFile(`data/excel/Models/Users.xlsx`, result.filter(r => r.code))
-        // utils.json.writeFile(`data/json/Models/Users.json`, result.filter(r => r.code))
+        utils.excel.writeFile(`data/excel/Models/Users.xlsx`, result.filter(r => r.code))
+        utils.json.writeFile(`data/json/Models/Users.json`, result.filter(r => r.code))
         this.UsersGroups(users)
         this.UsersUserPermissions(users)
         this.Distributors(distributors)
@@ -85,27 +84,29 @@ module.exports = {
                 group_id: rolesName.indexOf(currentUser.user_type.toUpperCase()) + 1
             })
         }
-        // utils.excel.writeFile(`data/excel/Models/UsersGroups.xlsx`, result)
-        // utils.json.writeFile(`data/json/Models/UsersGroups.json`, result)
+        utils.excel.writeFile(`data/excel/Models/UsersGroups.xlsx`, result)
+        utils.json.writeFile(`data/json/Models/UsersGroups.json`, result)
     },
     UsersUserPermissions: function (users) {
         let result = []
         let usersLen = users.length
         for (let i = 0; i < usersLen; i++) {
             let currentUser = users[i]
-            for (let j = 1; j <= 80; j++) {
+            for (let j = 1; j <= 200; j++) {
                 result.push({
                     user_id: currentUser.id,
                     permission_id: j
                 })
             }
-            result.push({
-                user_id: currentUser.id,
-                permission_id: 1000
-            })
+            if (currentUser.user_type != 'NVBH') {
+                result.push({
+                    user_id: currentUser.id,
+                    permission_id: 1000
+                })
+            }
         }
-        // utils.excel.writeFile(`data/excel/Models/UsersUserPermissions.xlsx`, result)
-        // utils.json.writeFile(`data/json/Models/UsersUserPermissions.json`, result)
+        utils.excel.writeFile(`data/excel/Models/UsersUserPermissions.xlsx`, result)
+        utils.json.writeFile(`data/json/Models/UsersUserPermissions.json`, result)
     },
     Distributors: async function (distributors) {
         let result = []
@@ -132,9 +133,8 @@ module.exports = {
             }
             result.push(temp)
         }
-        // console.log(result[0])
-        // utils.excel.writeFile(`data/excel/Models/Distributors.xlsx`, result.filter(r => r.code))
-        // utils.json.writeFile(`data/json/Models/Distributors.json`, result.filter(r => r.code))
+        utils.excel.writeFile(`data/excel/Models/Distributors.xlsx`, result.filter(r => r.code))
+        utils.json.writeFile(`data/json/Models/Distributors.json`, result.filter(r => r.code))
     },
     TargetKpis: async function (users) {
         let result = []
@@ -155,25 +155,25 @@ module.exports = {
                 user_id: user ? user.id : null
             })
         }
-        // utils.excel.writeFile(`data/excel/Models/TargetKpis.xlsx`, result.filter(t => t.user_id))
-        // utils.json.writeFile(`data/json/Models/TargetKpis.json`, result.filter(t => t.user_id))
+        utils.excel.writeFile(`data/excel/Models/TargetKpis.xlsx`, result.filter(t => t.user_id))
+        utils.json.writeFile(`data/json/Models/TargetKpis.json`, result.filter(t => t.user_id))
     },
     Customers: async function (users) {
         let result = []
         let customers = await utils.json.readFile(`data/json/${folder}/Customers.json`)
         let customersLen = customers.length
-        // console.log(customers[0])
         for (let i = 0; i < customersLen; i++) {
             let currentCustomer = customers[i]
+            let address = ((currentCustomer.address ? currentCustomer.address + ', ' : '') + (currentCustomer.village ? currentCustomer.village + ', ' : '')
+                + (currentCustomer.district ? currentCustomer.district + ', ' : '') + (currentCustomer.city ? currentCustomer.city : '')).trim()
             let temp = {
                 id: currentCustomer.id,
                 created_at: currentCustomer.created_at,
                 updated_at: currentCustomer.updated_at,
                 status: currentCustomer.status,
-                name: currentCustomer.name,
+                name: currentCustomer.name ? currentCustomer.name : '',
                 contact: currentCustomer.contact,
-                address: ((currentCustomer.address ? currentCustomer.address + ', ' : '') + (currentCustomer.village ? currentCustomer.village + ', ' : '')
-                    + (currentCustomer.district ? currentCustomer.district + ', ' : '') + (currentCustomer.city ? currentCustomer.city : '')).trim(),
+                address: address ? address : '',
                 phone: utils.text.checkAndAddZeroPrePhone(currentCustomer.phone),
                 mobile: utils.text.checkAndAddZeroPrePhone(currentCustomer.mobile),
                 frequency: currentCustomer.frequency
@@ -193,9 +193,9 @@ module.exports = {
             if (temp.dow_f8 == null) {
                 temp.dow_f8 = currentCustomer.frequency == 'F8' ? temp.dow_default + 3 : 0
             }
-            temp.city_id = null
-            temp.district_id = null
-            temp.village_id = null
+            temp.city_id = currentCustomer.city_id
+            temp.district_id = currentCustomer.district_id
+            temp.village_id = currentCustomer.village_id
 
             let region = regions.find(r => r.name == currentCustomer.region)
             temp.region_id = region ? region.id : null
@@ -214,9 +214,8 @@ module.exports = {
 
             result.push(temp)
         }
-        // console.log(result[0])
-        // utils.excel.writeFile(`data/excel/Models/Customers.xlsx`, result.filter(r => r.name))
-        // utils.json.writeFile(`data/json/Models/Customers.json`, result.filter(r => r.name))
+        utils.excel.writeFile(`data/excel/Models/Customers.xlsx`, result.filter(r => r.user_id))
+        utils.json.writeFile(`data/json/Models/Customers.json`, result.filter(r => r.user_id))
         this.CustomerNotes(users, customers)
         this.ProductCategories(users, customers)
     },
@@ -234,14 +233,14 @@ module.exports = {
                 content: currentNote.content
             }
             let user = users.find(u => u.old_id == currentNote.user_id)
-            let customer = customers.find(c => c.old_id == currentNote.customer_id)
             temp.user_id = user ? user.id : null
+            let customer = customers.find(c => c.old_id == currentNote.customer_id)
             temp.customer_id = customer ? customer.id : null
 
             result.push(temp)
         }
-        // utils.excel.writeFile(`data/excel/Models/CustomerNotes.xlsx`, result.filter(r => r.user_id && r.customer_id))
-        // utils.json.writeFile(`data/json/Models/CustomerNotes.json`, result.filter(r => r.user_id && r.customer_id))
+        utils.excel.writeFile(`data/excel/Models/CustomerNotes.xlsx`, result.filter(r => r.user_id && r.customer_id))
+        utils.json.writeFile(`data/json/Models/CustomerNotes.json`, result.filter(r => r.user_id && r.customer_id))
     },
     ProductCategories: async function (users, customers) {
         let result = []
@@ -257,8 +256,8 @@ module.exports = {
                 name: currentProductCat.name
             })
         }
-        // utils.excel.writeFile(`data/excel/Models/ProductCategories.xlsx`, result)
-        // utils.json.writeFile(`data/json/Models/ProductCategories.json`, result)
+        utils.excel.writeFile(`data/excel/Models/ProductCategories.xlsx`, result)
+        utils.json.writeFile(`data/json/Models/ProductCategories.json`, result)
         this.Products(users, customers, productCategories)
     },
     Products: async function (users, customers, productCategories) {
@@ -283,15 +282,14 @@ module.exports = {
             }
             result.push(temp)
         }
-        // utils.excel.writeFile(`data/excel/Models/Products.xlsx`, result)
-        // utils.json.writeFile(`data/json/Models/Products.json`, result)
+        utils.excel.writeFile(`data/excel/Models/Products.xlsx`, result)
+        utils.json.writeFile(`data/json/Models/Products.json`, result)
         this.Orders(users, customers, products)
     },
     Orders: async function (users, customers, products) {
         let result = []
         let orders = await utils.json.readFile(`data/json/${folder}/Orders.json`)
         let ordersLen = orders.length
-        // console.log(orders[0])
         let keys = Object.keys(orders[0])
         for (let i = 0; i < ordersLen; i++) {
             let currentOrder = orders[i]
@@ -302,22 +300,21 @@ module.exports = {
                 }
             }
             let user = users.find(u => u.old_id == currentOrder.user_id)
-            let customer = customers.find(c => c.old_id == currentOrder.customer_id)
             temp.user_id = user ? user.id : null
+
+            let customer = customers.find(c => c.old_id == currentOrder.customer_id)
             temp.customer_id = customer ? customer.id : null
 
             result.push(temp)
         }
-        // console.log(result[0])
-        // utils.excel.writeFile(`data/excel/Models/Orders.xlsx`, result)
-        // utils.json.writeFile(`data/json/Models/Orders.json`, result)
-        this.OrderProducts(orders, products)
+        utils.excel.writeFile(`data/excel/Models/Orders.xlsx`, result.filter(r => r.user_id && r.customer_id))
+        utils.json.writeFile(`data/json/Models/Orders.json`, result.filter(r => r.user_id && r.customer_id))
+        this.OrderProducts(users, customers, orders, products)
     },
-    OrderProducts: async function (orders, products) {
+    OrderProducts: async function (users, customers, orders, products) {
         let result = []
         let orderProducts = await utils.json.readFile(`data/json/${folder}/OrderProducts.json`)
         let orderProductsLen = orderProducts.length
-        // console.log(orderProducts[0])
         let keys = Object.keys(orderProducts[0])
         for (let i = 0; i < orderProductsLen; i++) {
             let currentOrderProduct = orderProducts[i]
@@ -334,10 +331,32 @@ module.exports = {
 
             result.push(temp)
         }
-        // console.log(result[0])
-        // utils.excel.writeFile(`data/excel/Models/OrderProducts.xlsx`, result)
-        // utils.json.writeFile(`data/json/Models/OrderProducts.json`, result)
+        utils.excel.writeFile(`data/excel/Models/OrderProducts.xlsx`, result)
+        utils.json.writeFile(`data/json/Models/OrderProducts.json`, result)
+        this.VisitSchedules(users, customers)
+    },
+    VisitSchedules: async function (users, customers) {
+        let result = []
+        let visitSchedules = await utils.json.readFile(`data/json/${folder}/VisitSchedules.json`)
+        let visitSchedulesLen = visitSchedules.length
+        let keys = Object.keys(visitSchedules[0])
+        for (let i = 0; i < visitSchedulesLen; i++) {
+            let currentOrdervisitSchedule = visitSchedules[i]
+            let temp = {}
+            for (let j = 0; j < keys.length; j++) {
+                if (keys[j] != 'old_id') {
+                    temp[`${keys[j]}`] = currentOrdervisitSchedule[`${keys[j]}`]
+                }
+            }
+            let user = users.find(u => u.old_id == currentOrdervisitSchedule.user_id)
+            temp.user_id = user ? user.id : null
+            let customer = customers.find(c => c.old_id == currentOrdervisitSchedule.customer_id)
+            temp.customer_id = customer ? customer.id : null
 
+            result.push(temp)
+        }
+        utils.excel.writeFile(`data/excel/Models/VisitSchedules.xlsx`, result.filter(r => r.user_id))
+        utils.json.writeFile(`data/json/Models/VisitSchedules.json`, result.filter(r => r.user_id))
         step5CreateQueryFile()
     }
 }

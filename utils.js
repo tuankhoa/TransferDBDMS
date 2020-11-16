@@ -64,13 +64,13 @@ module.exports = {
                     indexOfObjectMaxKeysLength = i
                 }
             }
-            let result = [data[indexOfObjectMaxKeysLength]]
+            let results = [data[indexOfObjectMaxKeysLength]]
             for (let i = 0; i < data.length; i++) {
                 if (i != indexOfObjectMaxKeysLength) {
-                    result.push(data[i])
+                    results.push(data[i])
                 }
             }
-            fs.writeFileSync(path, json2xls(data), 'binary')
+            fs.writeFileSync(path, json2xls(results), 'binary')
             console.log('Wrote file to: ' + path)
         }
     },
