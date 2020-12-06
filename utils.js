@@ -41,6 +41,8 @@ module.exports = {
                         for (let j = 0; j < rows[0].length; j++) {
                             if (rows[0][j] == 'oldId') {
                                 row.old_id = rows[i][j]
+                            } else if (['created_at', 'updated_at'].includes(rows[0][j])) {
+                                row[`${rows[0][j]}`] = new Date(new Date(rows[i][j]).setHours(new Date(rows[i][j]).getHours() - 12 - 7))
                             } else {
                                 row[`${rows[0][j]}`] = typeof rows[i][j] == 'string' && rows[i][j].toLowerCase() == 'null' ? null : rows[i][j]
                             }

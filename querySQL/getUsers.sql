@@ -18,6 +18,7 @@ select
 	IDNPP as distributor_id,
 	zalo as zalo,
 	phone as phone,
+	email as email,
 	vungmien as region
 from TblCommon_User
-where UserName <> ''
+where UserName <> '' and len(UserName) <> 3

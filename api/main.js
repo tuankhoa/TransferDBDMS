@@ -10,7 +10,7 @@ const step5CreateQueryFile = require('../api/step5CreateQueryFile.js')
 module.exports = async function () {
     // step1CreateCDVJsonFiles()
     // step2CreateCategoryJsonFiles()
-    step3CreateModelRawJsonFiles()
+    // step3CreateModelRawJsonFiles()
     // step4CreateModelJsonFiles.Main()
-    // step5CreateQueryFile()
+    step5CreateQueryFile()
 }

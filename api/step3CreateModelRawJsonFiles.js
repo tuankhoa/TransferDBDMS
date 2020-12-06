@@ -1,5 +1,6 @@
 const utils = require('../utils.js')
 const constants = require('../constants.js')
+const step4CreateModelJsonFiles = require('./step4CreateModelJsonFiles.js')
 
 module.exports = async function () {
     let folder = constants.folder
@@ -11,11 +12,14 @@ module.exports = async function () {
         let data = await utils.excel.readFileAndCreatedNewId(`data/excel/${folder}/${fileName}.xlsx`)
         let keys = Object.keys(data[0])
         for (let i = 0; i < data.length; i++) {
+            // if (data[i].old_id == 110110) console.log(data[i])
             let temp = {
                 id: data[i].id,
                 old_id: data[i].old_id,
-                created_at: ['CustomerNotes', 'Orders', 'VisitSchedules'].includes(fileName) ? utils.datetime.format.yMdHms(data[i].created_at) : createdDate,
-                updated_at: ['CustomerNotes', 'Orders', 'VisitSchedules'].includes(fileName) ? utils.datetime.format.yMdHms(data[i].updated_at) : createdDate,
+                created_at: ['CustomerNotes', 'Promotions', 'PromotionProducts', 'PromotionLevels',
+                    'Orders', 'OrderProducts', 'VisitSchedules'].includes(fileName) ? utils.datetime.format.yMdHms(data[i].created_at) : createdDate,
+                updated_at: ['CustomerNotes', 'Promotions', 'PromotionProducts', 'PromotionLevels',
+                    'Orders', 'OrderProducts', 'VisitSchedules'].includes(fileName) ? utils.datetime.format.yMdHms(data[i].updated_at) : createdDate,
                 status: data[i].status
             }
             for (let j = 0; j < keys.length; j++) {
@@ -97,6 +101,7 @@ module.exports = async function () {
             }
             newData.push(temp)
         }
-        utils.json.writeFile(`data/json/${folder}/${fileName}.json`, newData)
+        await utils.json.writeFile(`data/json/${folder}/${fileName}.json`, newData)
     }
+    step4CreateModelJsonFiles.Main()
 }

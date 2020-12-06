@@ -12,7 +12,7 @@ let main = require('./api/main.js')
 
 // Run server
 const app = express()
-const port = 3000
+const port = 3500
 app.listen(port, () => console.log(`App listening on port ${port}!`))
 
 main()

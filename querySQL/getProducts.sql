@@ -9,6 +9,7 @@ select
 	GiaNiemYet as price,
 	QuyCach as description,
 	SLTrenThung as quantity_per_box,
-	IDNhomSanPham as product_category_id
+	IDNhomSanPham as product_category_id,
+	Seq as sequence
 from TblSanPham sp
 left join TblDonViTinh dvt on dvt.id = sp.IDDonViTinh

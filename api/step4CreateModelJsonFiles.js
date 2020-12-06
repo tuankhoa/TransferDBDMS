@@ -1,5 +1,6 @@
 const utils = require('../utils.js')
 const constants = require('../constants.js')
+const uuid4 = require('uuid4')
 
 const step5CreateQueryFile = require('./step5CreateQueryFile.js')
 
@@ -14,15 +15,38 @@ const villages = require('../data/json/CDV/Villages.json')
 
 const folder = constants.folder
 const rolesName = constants.rolesName
+let createdDate = utils.datetime.format.yMdHms(new Date('2020-01-01 00:00:00'))
 
 module.exports = {
     Main: function () {
+        this.Businesses()
+    },
+    Businesses: async function () {
+        let results = []
+        results.push({
+            id: 'cdf495cd-1ebe-11eb-adc1-0242ac120002',
+            created_at: createdDate,
+            updated_at: createdDate,
+            status: 'ACTIVE',
+            name: 'Yến Việt'
+        })
+        utils.excel.writeFile(`data/excel/Models/Businesses.xlsx`, results)
+        utils.json.writeFile(`data/json/Models/Businesses.json`, results)
         this.Users()
     },
     Users: async function () {
-        let result = []
+        // nhà phân phối
+        let roles = ['ADMIN', 'SD', 'ASM', 'GSBH', 'NVBH']
+        let results = []
+        let listUsers = await utils.json.readFile(`data/json/${folder}/Users.json`)
         let distributors = await utils.json.readFile(`data/json/${folder}/Distributors.json`)
-        let users = await utils.json.readFile(`data/json/${folder}/Users.json`)
+        let users = []
+        for (let r = 0; r < roles.length; r++) {
+            let temps = listUsers.filter(u => u.user_type == roles[r])
+            for (let i = 0; i < temps.length; i++) {
+                users.push(temps[i])
+            }
+        }
         let usersLen = users.length
         let admin = users.find(u => u.code && u.code.toLowerCase() == 'admin')
         for (let i = 0; i < usersLen; i++) {
@@ -49,11 +73,12 @@ module.exports = {
                 currentUser.manager_id = admin.id
             }
 
-            result.push({
+            results.push({
                 id: currentUser.id,
                 created_at: currentUser.created_at,
                 updated_at: currentUser.updated_at,
                 status: currentUser.status,
+                business_id: 'cdf495cd-1ebe-11eb-adc1-0242ac120002',
                 password: currentUser.password,
                 last_login: currentUser.last_login,
                 is_superuser: currentUser.is_superuser,
@@ -63,16 +88,16 @@ module.exports = {
                 manager_id: currentUser.manager_id,
                 distributor_id: distributor ? distributor.id : null,
                 zalo: currentUser.zalo,
-                phone: currentUser.phone
+                phone: currentUser.phone,
+                email: currentUser.email
             })
         }
-        utils.excel.writeFile(`data/excel/Models/Users.xlsx`, result.filter(r => r.code))
-        utils.json.writeFile(`data/json/Models/Users.json`, result.filter(r => r.code))
+        utils.excel.writeFile(`data/excel/Models/Users.xlsx`, results.filter(r => r.code))
+        utils.json.writeFile(`data/json/Models/Users.json`, results.filter(r => r.code))
         this.UsersGroups(users)
         this.UsersUserPermissions(users)
         this.Distributors(distributors)
         this.TargetKpis(users)
-        this.Customers(users)
     },
     UsersGroups: function (users) {
         let result = []
@@ -102,6 +127,10 @@ module.exports = {
                 result.push({
                     user_id: currentUser.id,
                     permission_id: 1000
+                })
+                result.push({
+                    user_id: currentUser.id,
+                    permission_id: 1001
                 })
             }
         }
@@ -157,8 +186,9 @@ module.exports = {
         }
         utils.excel.writeFile(`data/excel/Models/TargetKpis.xlsx`, result.filter(t => t.user_id))
         utils.json.writeFile(`data/json/Models/TargetKpis.json`, result.filter(t => t.user_id))
+        this.Customers(users, targetKpis.filter(k => k.kpi_type == 'PRODUCTS'))
     },
-    Customers: async function (users) {
+    Customers: async function (users, targetKpis) {
         let result = []
         let customers = await utils.json.readFile(`data/json/${folder}/Customers.json`)
         let customersLen = customers.length
@@ -217,7 +247,7 @@ module.exports = {
         utils.excel.writeFile(`data/excel/Models/Customers.xlsx`, result.filter(r => r.user_id))
         utils.json.writeFile(`data/json/Models/Customers.json`, result.filter(r => r.user_id))
         this.CustomerNotes(users, customers)
-        this.ProductCategories(users, customers)
+        this.ProductCategories(users, targetKpis, customers)
     },
     CustomerNotes: async function (users, customers) {
         let result = []
@@ -242,7 +272,7 @@ module.exports = {
         utils.excel.writeFile(`data/excel/Models/CustomerNotes.xlsx`, result.filter(r => r.user_id && r.customer_id))
         utils.json.writeFile(`data/json/Models/CustomerNotes.json`, result.filter(r => r.user_id && r.customer_id))
     },
-    ProductCategories: async function (users, customers) {
+    ProductCategories: async function (users, targetKpis, customers) {
         let result = []
         let productCategories = await utils.json.readFile(`data/json/${folder}/ProductCategories.json`)
         let productCatsLen = productCategories.length
@@ -258,16 +288,18 @@ module.exports = {
         }
         utils.excel.writeFile(`data/excel/Models/ProductCategories.xlsx`, result)
         utils.json.writeFile(`data/json/Models/ProductCategories.json`, result)
-        this.Products(users, customers, productCategories)
+        this.Products(users, targetKpis, customers, productCategories)
     },
-    Products: async function (users, customers, productCategories) {
+    Products: async function (users, targetKpis, customers, productCategories) {
         let result = []
         let products = await utils.json.readFile(`data/json/${folder}/Products.json`)
         let productsLen = products.length
         let keys = Object.keys(products[0])
         for (let i = 0; i < productsLen; i++) {
             let currentProduct = products[i]
-            let temp = {}
+            let temp = {
+                business_id: 'cdf495cd-1ebe-11eb-adc1-0242ac120002'
+            }
             for (let j = 0; j < keys.length; j++) {
                 if (keys[j] != 'old_id') {
                     if (keys[j] == 'code') {
@@ -284,9 +316,156 @@ module.exports = {
         }
         utils.excel.writeFile(`data/excel/Models/Products.xlsx`, result)
         utils.json.writeFile(`data/json/Models/Products.json`, result)
-        this.Orders(users, customers, products)
+        this.PromotionTypes(users, customers, products)
+        this.KpiProducts(users, targetKpis, products)
     },
-    Orders: async function (users, customers, products) {
+    KpiProducts: async function (users, targetKpis, products) {
+        let result = []
+        for (let i = 0; i < targetKpis.length; i++) {
+            let currentTarget = targetKpis[i]
+            let user = users.find(u => u.old_id == currentTarget.user_id)
+            let targetTime = utils.datetime.format.yMdHms(new Date(currentTarget.year, currentTarget.month - 1, 2))
+            if (user && user.user_type == 'NVBH') {
+                result.push({
+                    id: uuid4(),
+                    created_at: targetTime,
+                    updated_at: targetTime,
+                    status: 'ACTIVE',
+                    kpi_id: currentTarget.id,
+                    product_id: products.find(p => p.code == '24130002').id
+                })
+                result.push({
+                    id: uuid4(),
+                    created_at: targetTime,
+                    updated_at: targetTime,
+                    status: 'ACTIVE',
+                    kpi_id: currentTarget.id,
+                    product_id: products.find(p => p.code == '24130004').id
+                })
+            }
+        }
+        utils.excel.writeFile(`data/excel/Models/KpiProducts.xlsx`, result)
+        utils.json.writeFile(`data/json/Models/KpiProducts.json`, result)
+    },
+    PromotionTypes: async function (users, customers, products) {
+        let result = []
+        let proTypes = await utils.json.readFile(`data/json/${folder}/PromotionTypes.json`)
+        let proTypesLen = proTypes.length
+        let keys = Object.keys(proTypes[0])
+        for (let i = 0; i < proTypesLen; i++) {
+            let currentProType = proTypes[i]
+            let temp = {}
+            for (let j = 0; j < keys.length; j++) {
+                if (keys[j] != 'old_id') {
+                    temp[`${keys[j]}`] = currentProType[`${keys[j]}`]
+                }
+            }
+            result.push(temp)
+        }
+        utils.excel.writeFile(`data/excel/Models/PromotionTypes.xlsx`, result)
+        utils.json.writeFile(`data/json/Models/PromotionTypes.json`, result)
+        this.Promotions(users, customers, products, proTypes)
+    },
+    Promotions: async function (users, customers, products, proTypes) {
+        let result = []
+        let promotions = await utils.json.readFile(`data/json/${folder}/Promotions.json`)
+        let promotionsLen = promotions.length
+        let keys = Object.keys(promotions[0])
+        for (let i = 0; i < promotionsLen; i++) {
+            let currentPromotion = promotions[i]
+            let temp = {}
+            for (let j = 0; j < keys.length; j++) {
+                if (keys[j] != 'old_id' && keys[j] != 'region') {
+                    temp[`${keys[j]}`] = currentPromotion[`${keys[j]}`]
+                }
+            }
+            temp.promotion_type_id = proTypes.find(pt => pt.old_id == currentPromotion.promotion_type_id).id
+            temp.region_id = regions.find(r => r.name == currentPromotion.region).id
+            result.push(temp)
+        }
+        utils.excel.writeFile(`data/excel/Models/Promotions.xlsx`, result)
+        utils.json.writeFile(`data/json/Models/Promotions.json`, result)
+        this.PromotionProducts(users, customers, products, promotions)
+    },
+    PromotionProducts: async function (users, customers, products, promotions) {
+        let result = []
+        let proPros = await utils.json.readFile(`data/json/${folder}/PromotionProducts.json`)
+        let proProsLen = proPros.length
+        let keys = Object.keys(proPros[0])
+        for (let i = 0; i < proProsLen; i++) {
+            let currentProPro = proPros[i]
+            if (currentProPro.promotion_id != 1) {
+                let temp = {}
+                for (let j = 0; j < keys.length; j++) {
+                    if (keys[j] != 'old_id') {
+                        temp[`${keys[j]}`] = currentProPro[`${keys[j]}`]
+                    }
+                }
+                temp.product_id = products.find(p => p.old_id == currentProPro.product_id).id
+                temp.promotion_id = promotions.find(pr => pr.old_id == currentProPro.promotion_id).id
+                result.push(temp)
+            }
+        }
+        let proProALot = proPros.filter(pp => pp.promotion_id == 1)
+        let promotionsALot = promotions.filter(pr => pr.old_id == 1)
+        for (let i = 0; i < proProALot.length; i++) {
+            for (let r = 0; r < regions.length; r++) {
+                let currentProPro = proProALot[i]
+                let temp = {}
+                for (let j = 0; j < keys.length; j++) {
+                    if (keys[j] != 'old_id') {
+                        temp[`${keys[j]}`] = currentProPro[`${keys[j]}`]
+                    }
+                }
+                temp.id = uuid4()
+                temp.product_id = products.find(p => p.old_id == currentProPro.product_id).id
+                temp.promotion_id = promotionsALot.find(pr => pr.region == regions[r].name).id
+                result.push(temp)
+            }
+        }
+        utils.excel.writeFile(`data/excel/Models/PromotionProducts.xlsx`, result)
+        utils.json.writeFile(`data/json/Models/PromotionProducts.json`, result)
+        this.PromotionLevels(users, customers, products, promotions)
+    },
+    PromotionLevels: async function (users, customers, products, promotions) {
+        let result = []
+        let proLevs = await utils.json.readFile(`data/json/${folder}/PromotionLevels.json`)
+        let proLevsLen = proLevs.length
+        let keys = Object.keys(proLevs[0])
+        for (let i = 0; i < proLevsLen; i++) {
+            let currentProLevs = proLevs[i]
+            if (currentProLevs.promotion_id != 1) {
+                let temp = {}
+                for (let j = 0; j < keys.length; j++) {
+                    if (keys[j] != 'old_id') {
+                        temp[`${keys[j]}`] = currentProLevs[`${keys[j]}`]
+                    }
+                }
+                temp.promotion_id = promotions.find(pr => pr.old_id == currentProLevs.promotion_id).id
+                result.push(temp)
+            }
+        }
+        let proLevsALot = proLevs.filter(pl => pl.promotion_id == 1)
+        let promotionsALot = promotions.filter(pr => pr.old_id == 1)
+        for (let i = 0; i < proLevsALot.length; i++) {
+            for (let r = 0; r < regions.length; r++) {
+                let currentProLev = proLevsALot[i]
+                let temp = {}
+                for (let j = 0; j < keys.length; j++) {
+                    if (keys[j] != 'old_id') {
+                        temp[`${keys[j]}`] = currentProLev[`${keys[j]}`]
+                    }
+                }
+                temp.id = uuid4()
+                temp.promotion_id = promotionsALot.find(pr => pr.region == regions[r].name).id
+                result.push(temp)
+            }
+        }
+        utils.excel.writeFile(`data/excel/Models/PromotionLevels.xlsx`, result)
+        utils.json.writeFile(`data/json/Models/PromotionLevels.json`, result)
+        this.Orders(users, customers, products, promotions, result)
+    },
+    Orders: async function (users, customers, products, promotions, promotionLevels) {
         let result = []
         let orders = await utils.json.readFile(`data/json/${folder}/Orders.json`)
         let ordersLen = orders.length
@@ -305,13 +484,23 @@ module.exports = {
             let customer = customers.find(c => c.old_id == currentOrder.customer_id)
             temp.customer_id = customer ? customer.id : null
 
+            temp.promotion_id = null
+            temp.promotion_level_id = null
+            if (customer) {
+                let promotion = promotions.find(pr => pr.old_id == currentOrder.promotion_id && customer.region == pr.region)
+                if (promotion) {
+                    temp.promotion_id = promotion.id
+                    temp.promotion_level_id = promotionLevels.find(pl => pl.promotion_id == promotion.id).id
+                }
+            }
+
             result.push(temp)
         }
         utils.excel.writeFile(`data/excel/Models/Orders.xlsx`, result.filter(r => r.user_id && r.customer_id))
         utils.json.writeFile(`data/json/Models/Orders.json`, result.filter(r => r.user_id && r.customer_id))
-        this.OrderProducts(users, customers, orders, products)
+        this.OrderProducts(users, customers, orders, products, promotions, promotionLevels)
     },
-    OrderProducts: async function (users, customers, orders, products) {
+    OrderProducts: async function (users, customers, orders, products, promotions, promotionLevels) {
         let result = []
         let orderProducts = await utils.json.readFile(`data/json/${folder}/OrderProducts.json`)
         let orderProductsLen = orderProducts.length
@@ -324,10 +513,18 @@ module.exports = {
                     temp[`${keys[j]}`] = currentOrderProduct[`${keys[j]}`]
                 }
             }
-            order = orders.find(o => o.old_id == currentOrderProduct.order_id)
+            let order = orders.find(o => o.old_id == currentOrderProduct.order_id)
+            if (order) {
+                temp.order_id = order.id || temp.order_id
+                temp.created_at = order.created_at || temp.created_at
+                temp.created_at = order.updated_at || temp.updated_at
+            }
             product = products.find(p => p.old_id == currentOrderProduct.product_id)
-            temp.order_id = order ? order.id : null
             temp.product_id = product ? product.id : null
+
+            let promotion = promotions.find(pr => pr.old_id == currentOrderProduct.promotion_id)
+            temp.promotion_id = promotion ? promotion.id : null
+            temp.promotion_level_id = promotion ? promotionLevels.find(pl => pl.promotion_id == promotion.id).id : null
 
             result.push(temp)
         }
@@ -336,27 +533,27 @@ module.exports = {
         this.VisitSchedules(users, customers)
     },
     VisitSchedules: async function (users, customers) {
-        let result = []
-        let visitSchedules = await utils.json.readFile(`data/json/${folder}/VisitSchedules.json`)
-        let visitSchedulesLen = visitSchedules.length
-        let keys = Object.keys(visitSchedules[0])
-        for (let i = 0; i < visitSchedulesLen; i++) {
-            let currentOrdervisitSchedule = visitSchedules[i]
-            let temp = {}
-            for (let j = 0; j < keys.length; j++) {
-                if (keys[j] != 'old_id') {
-                    temp[`${keys[j]}`] = currentOrdervisitSchedule[`${keys[j]}`]
-                }
-            }
-            let user = users.find(u => u.old_id == currentOrdervisitSchedule.user_id)
-            temp.user_id = user ? user.id : null
-            let customer = customers.find(c => c.old_id == currentOrdervisitSchedule.customer_id)
-            temp.customer_id = customer ? customer.id : null
+        // let result = []
+        // let visitSchedules = await utils.json.readFile(`data/json/${folder}/VisitSchedules.json`)
+        // let visitSchedulesLen = visitSchedules.length
+        // let keys = Object.keys(visitSchedules[0])
+        // for (let i = 0; i < visitSchedulesLen; i++) {
+        //     let currentOrdervisitSchedule = visitSchedules[i]
+        //     let temp = {}
+        //     for (let j = 0; j < keys.length; j++) {
+        //         if (keys[j] != 'old_id') {
+        //             temp[`${keys[j]}`] = currentOrdervisitSchedule[`${keys[j]}`]
+        //         }
+        //     }
+        //     let user = users.find(u => u.old_id == currentOrdervisitSchedule.user_id)
+        //     temp.user_id = user ? user.id : null
+        //     let customer = customers.find(c => c.old_id == currentOrdervisitSchedule.customer_id)
+        //     temp.customer_id = customer ? customer.id : null
 
-            result.push(temp)
-        }
-        utils.excel.writeFile(`data/excel/Models/VisitSchedules.xlsx`, result.filter(r => r.user_id))
-        utils.json.writeFile(`data/json/Models/VisitSchedules.json`, result.filter(r => r.user_id))
+        //     result.push(temp)
+        // }
+        // utils.excel.writeFile(`data/excel/Models/VisitSchedules.xlsx`, result.filter(r => r.user_id))
+        // utils.json.writeFile(`data/json/Models/VisitSchedules.json`, result.filter(r => r.user_id))
         step5CreateQueryFile()
     }
 }
