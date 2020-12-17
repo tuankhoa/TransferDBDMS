@@ -15,7 +15,7 @@ const villages = require('../data/json/CDV/Villages.json')
 
 const folder = constants.folder
 const rolesName = constants.rolesName
-let createdDate = utils.datetime.format.yMdHms(new Date('2020-01-01 00:00:00'))
+let createdDate = utils.datetime.format.yMdHms(new Date('2020-01-01 12:00:00'))
 
 module.exports = {
     Main: function () {
@@ -75,6 +75,7 @@ module.exports = {
 
             results.push({
                 id: currentUser.id,
+                old_id: currentUser.old_id,
                 created_at: currentUser.created_at,
                 updated_at: currentUser.updated_at,
                 status: currentUser.status,
@@ -145,19 +146,17 @@ module.exports = {
             let currentDistributor = distributors[i]
             let temp = {}
             for (let key of keys) {
-                if (key != 'old_id') {
-                    if (key == 'phone') {
-                        temp.phone = utils.text.checkAndAddZeroPrePhone(currentDistributor.phone)
-                    } else if (key == 'address') {
-                        temp.address = currentDistributor.address ? currentDistributor.address : ''
-                    } else if (key == 'region') {
-                        let region = regions.find(r => r.name == currentDistributor.region)
-                        temp.region_id = region ? region.id : null
-                    } else if (['city', 'district', 'village'].includes(key)) {
-                        temp[`${key}_id`] = currentDistributor[`${key}`]
-                    } else {
-                        temp[`${key}`] = currentDistributor[`${key}`]
-                    }
+                if (key == 'phone') {
+                    temp.phone = utils.text.checkAndAddZeroPrePhone(currentDistributor.phone)
+                } else if (key == 'address') {
+                    temp.address = currentDistributor.address ? currentDistributor.address : ''
+                } else if (key == 'region') {
+                    let region = regions.find(r => r.name == currentDistributor.region)
+                    temp.region_id = region ? region.id : null
+                } else if (['city', 'district', 'village'].includes(key)) {
+                    temp[`${key}_id`] = currentDistributor[`${key}`]
+                } else {
+                    temp[`${key}`] = currentDistributor[`${key}`]
                 }
             }
             result.push(temp)
@@ -175,6 +174,7 @@ module.exports = {
             let user = users.find(u => u.old_id == currentTarget.user_id && u.user_type == 'NVBH')
             result.push({
                 id: currentTarget.id,
+                old_id: currentTarget.old_id,
                 created_at: targetTime,
                 updated_at: targetTime,
                 status: currentTarget.status,
@@ -198,9 +198,11 @@ module.exports = {
                 + (currentCustomer.district ? currentCustomer.district + ', ' : '') + (currentCustomer.city ? currentCustomer.city : '')).trim()
             let temp = {
                 id: currentCustomer.id,
+                old_id: currentCustomer.old_id,
                 created_at: currentCustomer.created_at,
                 updated_at: currentCustomer.updated_at,
                 status: currentCustomer.status,
+                // code: currentCustomer.old_id,
                 name: currentCustomer.name ? currentCustomer.name : '',
                 contact: currentCustomer.contact,
                 address: address ? address : '',
@@ -257,6 +259,7 @@ module.exports = {
             let currentNote = notes[i]
             let temp = {
                 id: currentNote.id,
+                old_id: currentNote.old_id,
                 created_at: currentNote.created_at,
                 updated_at: currentNote.updated_at,
                 status: currentNote.status,
@@ -280,10 +283,12 @@ module.exports = {
             let currentProductCat = productCategories[i]
             result.push({
                 id: currentProductCat.id,
+                old_id: currentProductCat.old_id,
                 created_at: currentProductCat.created_at,
                 updated_at: currentProductCat.updated_at,
                 status: currentProductCat.status,
-                name: currentProductCat.name
+                name: currentProductCat.name,
+                // code: (100 + currentProductCat.code).toString().slice(1)
             })
         }
         utils.excel.writeFile(`data/excel/Models/ProductCategories.xlsx`, result)
@@ -301,15 +306,13 @@ module.exports = {
                 business_id: 'cdf495cd-1ebe-11eb-adc1-0242ac120002'
             }
             for (let j = 0; j < keys.length; j++) {
-                if (keys[j] != 'old_id') {
-                    if (keys[j] == 'code') {
-                        temp.code = currentProduct.code ? currentProduct.code.toString() : null
-                    } else if (keys[j] == 'product_category_id') {
-                        let productCategory = productCategories.find(pc => pc.old_id == currentProduct.product_category_id)
-                        temp.product_category_id = productCategory ? productCategory.id : null
-                    } else {
-                        temp[`${keys[j]}`] = currentProduct[`${keys[j]}`]
-                    }
+                if (keys[j] == 'code') {
+                    temp.code = currentProduct.code ? currentProduct.code.toString() : null
+                } else if (keys[j] == 'product_category_id') {
+                    let productCategory = productCategories.find(pc => pc.old_id == currentProduct.product_category_id)
+                    temp.product_category_id = productCategory ? productCategory.id : null
+                } else {
+                    temp[`${keys[j]}`] = currentProduct[`${keys[j]}`]
                 }
             }
             result.push(temp)
@@ -332,7 +335,9 @@ module.exports = {
                     updated_at: targetTime,
                     status: 'ACTIVE',
                     kpi_id: currentTarget.id,
-                    product_id: products.find(p => p.code == '24130002').id
+                    kpi_old_id: currentTarget.old_id,
+                    product_id: products.find(p => p.code == '24130002').id,
+                    product_old_id: products.find(p => p.code == '24130002').old_id
                 })
                 result.push({
                     id: uuid4(),
@@ -340,7 +345,9 @@ module.exports = {
                     updated_at: targetTime,
                     status: 'ACTIVE',
                     kpi_id: currentTarget.id,
-                    product_id: products.find(p => p.code == '24130004').id
+                    kpi_old_id: currentTarget.old_id,
+                    product_id: products.find(p => p.code == '24130004').id,
+                    product_old_id: products.find(p => p.code == '24130004').old_id
                 })
             }
         }
@@ -349,16 +356,14 @@ module.exports = {
     },
     PromotionTypes: async function (users, customers, products) {
         let result = []
-        let proTypes = await utils.json.readFile(`data/json/${folder}/PromotionTypes.json`)
+        let proTypes = await utils.json.readFile(`data/json/PromotionTypes.json`)
         let proTypesLen = proTypes.length
         let keys = Object.keys(proTypes[0])
         for (let i = 0; i < proTypesLen; i++) {
             let currentProType = proTypes[i]
             let temp = {}
             for (let j = 0; j < keys.length; j++) {
-                if (keys[j] != 'old_id') {
-                    temp[`${keys[j]}`] = currentProType[`${keys[j]}`]
-                }
+                temp[`${keys[j]}`] = currentProType[`${keys[j]}`]
             }
             result.push(temp)
         }
@@ -375,7 +380,7 @@ module.exports = {
             let currentPromotion = promotions[i]
             let temp = {}
             for (let j = 0; j < keys.length; j++) {
-                if (keys[j] != 'old_id' && keys[j] != 'region') {
+                if (keys[j] != 'region') {
                     temp[`${keys[j]}`] = currentPromotion[`${keys[j]}`]
                 }
             }
@@ -397,9 +402,7 @@ module.exports = {
             if (currentProPro.promotion_id != 1) {
                 let temp = {}
                 for (let j = 0; j < keys.length; j++) {
-                    if (keys[j] != 'old_id') {
-                        temp[`${keys[j]}`] = currentProPro[`${keys[j]}`]
-                    }
+                    temp[`${keys[j]}`] = currentProPro[`${keys[j]}`]
                 }
                 temp.product_id = products.find(p => p.old_id == currentProPro.product_id).id
                 temp.promotion_id = promotions.find(pr => pr.old_id == currentProPro.promotion_id).id
@@ -413,9 +416,7 @@ module.exports = {
                 let currentProPro = proProALot[i]
                 let temp = {}
                 for (let j = 0; j < keys.length; j++) {
-                    if (keys[j] != 'old_id') {
-                        temp[`${keys[j]}`] = currentProPro[`${keys[j]}`]
-                    }
+                    temp[`${keys[j]}`] = currentProPro[`${keys[j]}`]
                 }
                 temp.id = uuid4()
                 temp.product_id = products.find(p => p.old_id == currentProPro.product_id).id
@@ -437,9 +438,7 @@ module.exports = {
             if (currentProLevs.promotion_id != 1) {
                 let temp = {}
                 for (let j = 0; j < keys.length; j++) {
-                    if (keys[j] != 'old_id') {
-                        temp[`${keys[j]}`] = currentProLevs[`${keys[j]}`]
-                    }
+                    temp[`${keys[j]}`] = currentProLevs[`${keys[j]}`]
                 }
                 temp.promotion_id = promotions.find(pr => pr.old_id == currentProLevs.promotion_id).id
                 result.push(temp)
@@ -452,9 +451,7 @@ module.exports = {
                 let currentProLev = proLevsALot[i]
                 let temp = {}
                 for (let j = 0; j < keys.length; j++) {
-                    if (keys[j] != 'old_id') {
-                        temp[`${keys[j]}`] = currentProLev[`${keys[j]}`]
-                    }
+                    temp[`${keys[j]}`] = currentProLev[`${keys[j]}`]
                 }
                 temp.id = uuid4()
                 temp.promotion_id = promotionsALot.find(pr => pr.region == regions[r].name).id
@@ -474,9 +471,7 @@ module.exports = {
             let currentOrder = orders[i]
             let temp = {}
             for (let j = 0; j < keys.length; j++) {
-                if (keys[j] != 'old_id') {
-                    temp[`${keys[j]}`] = currentOrder[`${keys[j]}`]
-                }
+                temp[`${keys[j]}`] = currentOrder[`${keys[j]}`]
             }
             let user = users.find(u => u.old_id == currentOrder.user_id)
             temp.user_id = user ? user.id : null
@@ -509,9 +504,7 @@ module.exports = {
             let currentOrderProduct = orderProducts[i]
             let temp = {}
             for (let j = 0; j < keys.length; j++) {
-                if (keys[j] != 'old_id') {
-                    temp[`${keys[j]}`] = currentOrderProduct[`${keys[j]}`]
-                }
+                temp[`${keys[j]}`] = currentOrderProduct[`${keys[j]}`]
             }
             let order = orders.find(o => o.old_id == currentOrderProduct.order_id)
             if (order) {

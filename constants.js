@@ -1,5 +1,5 @@
 module.exports = {
-    folder: '20201205',
+    folder: '20201217',
     fileName: {
         fileNameCDV: [
             'Cities',
@@ -22,7 +22,7 @@ module.exports = {
             'CustomerNotes',
             'ProductCategories',
             'Products',
-            'PromotionTypes',
+            // 'PromotionTypes',
             'Promotions',
             'PromotionProducts',
             'PromotionLevels',
@@ -68,5 +68,16 @@ module.exports = {
         'GSBH',
         'SD',
         'NVBH'
-    ]
+    ],
+    mssqlConfig: {
+        user: 'devuser',
+        password: '123@Abc',
+        server: '103.231.189.160,29328',
+        database: 'MLT_YenViet_Live',
+        pool: {
+            max: 10,
+            min: 0,
+            idleTimeoutMillis: 30000
+        }
+    }
 }

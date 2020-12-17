@@ -6,6 +6,6 @@ select
 	iif(idkpi = 2, 'ORDERS', iif(idkpi = 1, 'SALES', 'PRODUCTS')) as kpi_type,
 	Month as month,
 	Year as year,
-	value as value,
+	isnull(value, 0) as value,
 	IDUser as user_id
 from TblKPIUser

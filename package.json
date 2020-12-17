@@ -12,6 +12,8 @@
     "express": "^4.17.1",
     "fs": "0.0.1-security",
     "json2xls": "^0.1.2",
+    "mssql": "^6.3.0",
+    "mysql": "^2.18.1",
     "read-excel-file": "^4.0.7",
     "uuid4": "^2.0.2"
   }
